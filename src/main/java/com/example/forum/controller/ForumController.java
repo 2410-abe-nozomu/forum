@@ -10,6 +10,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 
 @Controller
@@ -23,11 +27,11 @@ public class ForumController {
      * 投稿内容表示処理
      */
     @GetMapping
-    public ModelAndView top() {
+    public ModelAndView top(@RequestParam(name = "startDate",  required = false)String startDate, @RequestParam(name = "endDate", required = false)String endDate) {
         ModelAndView mav = new ModelAndView();
         CommentForm form = new CommentForm();
-        // 投稿を全件取得
-        List<ReportForm> contentData = reportService.findAllReport();
+        // 投稿を全件取得(絞り込み日時情報を引数とする)
+        List<ReportForm> contentData = reportService.findAllReport(startDate, endDate);
         //コメントを全件取得
         List<CommentForm> commentData = commentService.findAllComment();
         // 画面遷移先を指定
@@ -37,6 +41,8 @@ public class ForumController {
         mav.addObject("comments", commentData);
         //バインドを返信のFormに設定
         mav.addObject("formModel", form);
+        mav.addObject("startDate", startDate);
+        mav.addObject("endDate", endDate);
         return mav;
     }
     /*
@@ -108,6 +114,19 @@ public class ForumController {
         commentForm.setContent_id(id);
         // 投稿をテーブルに格納
         commentService.saveComment(commentForm);
+        //返信先の投稿の更新日時を更新する
+        //IDを引数にReportServiceのupdateReportを呼び出す
+        reportService.updateReport(id);
+        // rootへリダイレクト
+        return new ModelAndView("redirect:/");
+    }
+    /*
+     * 返信削除処理
+     */
+    @DeleteMapping("/commentDelete/{id}")
+    public ModelAndView deleteComment(@PathVariable Integer id) {
+        // 削除対象の投稿データを引数にサービスを呼び出す
+        commentService.deleteComment(id);
         // rootへリダイレクト
         return new ModelAndView("redirect:/");
     }

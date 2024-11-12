@@ -22,7 +22,7 @@ public class CommentService {
      * レコード全件取得処理
      */
     public List<CommentForm> findAllComment() {
-        List<Comment> results = commentRepository.findAllByOrderByIdDesc();
+        List<Comment> results = commentRepository.findAllByOrderByCreatedDateDesc();
         List<CommentForm> comments = setCommentForm(results);
         return comments;
     }
@@ -57,6 +57,13 @@ public class CommentService {
     public void saveComment(CommentForm reqComment) {
         Comment saveComment = setCommentEntity(reqComment);
         commentRepository.save(saveComment);
+    }
+    /*
+     * レコード追加（投稿削除）
+     */
+    public void deleteComment(Integer id) {
+        //Entityは使わず直接IDのみをreportRepositoryに渡す
+        commentRepository.deleteById(id);
     }
     /*
      * リクエストから取得した情報をEntityに設定
