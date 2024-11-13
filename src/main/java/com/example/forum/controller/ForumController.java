@@ -5,8 +5,13 @@ import com.example.forum.controller.form.ReportForm;
 import com.example.forum.repository.entity.Report;
 import com.example.forum.service.CommentService;
 import com.example.forum.service.ReportService;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -22,6 +27,8 @@ public class ForumController {
     ReportService reportService;
     @Autowired
     CommentService commentService;
+    @Autowired
+    HttpSession session;
 
     /*
      * 投稿内容表示処理
@@ -43,6 +50,21 @@ public class ForumController {
         mav.addObject("formModel", form);
         mav.addObject("startDate", startDate);
         mav.addObject("endDate", endDate);
+
+        // セッションからエラーメッセージを取得
+        String contentError = (String) session.getAttribute("content");
+        //エラーメッセージの有無を確認
+        if (contentError != null) {
+            //セッションからIDを取得
+            Integer reportId = (Integer)session.getAttribute("id");
+            //エラーメッセージとIDをそれぞれViewに渡す
+            mav.addObject("contentError", contentError);
+            mav.addObject("reportId", reportId);
+            //セッションからエラーメッセージとIDを削除
+            session.removeAttribute("content");
+            session.removeAttribute("id");
+        }
+
         return mav;
     }
     /*
@@ -63,7 +85,12 @@ public class ForumController {
      * 新規投稿処理
      */
     @PostMapping("/add")
-    public ModelAndView addContent(@ModelAttribute("formModel") ReportForm reportForm){
+    public ModelAndView addContent(@ModelAttribute("formModel") @Validated ReportForm reportForm, BindingResult result){
+        //投稿の入力がブランクでないことをチェック
+        if(result.hasErrors()){
+            ModelAndView modelAndView = new ModelAndView("/new");
+            return modelAndView;
+        }
         // 投稿をテーブルに格納
         reportService.saveReport(reportForm);
         // rootへリダイレクト
@@ -97,7 +124,12 @@ public class ForumController {
      * 投稿編集処理
      */
     @PutMapping("/edit/{id}")
-    public ModelAndView editContent(@PathVariable Integer id, @ModelAttribute("formModel") ReportForm report){
+    public ModelAndView editContent(@PathVariable Integer id, @ModelAttribute("formModel") @Validated ReportForm report, BindingResult result){
+        //コメントの入力チェック
+        if(result.hasErrors()){
+            ModelAndView modelAndView = new ModelAndView("/edit");
+            return modelAndView;
+        }
         //Modelから受け取ったIDをreportFormに格納
         report.setId(id);
         // IDと編集した投稿が格納されたreportFormをサービスへ渡してDBに登録
@@ -109,7 +141,13 @@ public class ForumController {
      * 返信投稿処理
      */
     @PostMapping("/comment/{id}")
-    public ModelAndView addContent(@PathVariable Integer id, @ModelAttribute("formModel") CommentForm commentForm){
+    public ModelAndView addContent(@PathVariable Integer id, @ModelAttribute("formModel") @Validated CommentForm commentForm, BindingResult result){
+        //返信の入力チェック
+        if(result.hasErrors()) {
+            session.setAttribute("content", "コメントを入力してください");
+            session.setAttribute("id", id);
+            return new ModelAndView("redirect:/");
+        }
         //取得した返信対象のIDをセット
         commentForm.setContent_id(id);
         // 投稿をテーブルに格納
@@ -145,14 +183,23 @@ public class ForumController {
         return mav;
     }
     /*
-     * 投稿編集処理
+     * 返信編集処理
      */
     @PutMapping("/commentEdit/{id}")
-    public ModelAndView editComment(@PathVariable Integer id, @ModelAttribute("formModel") CommentForm comment){
+    public ModelAndView editComment(@PathVariable Integer id, @ModelAttribute("formModel")@Validated CommentForm comment, BindingResult result){
+        //投稿の入力がブランクでないことをチェック
+        if(result.hasErrors()){
+            ModelAndView modelAndView = new ModelAndView("/commentEdit");
+            return modelAndView;
+        }
         //Viewから受け取ったIDをcommentFormに格納
         comment.setId(id);
         // IDと編集した投稿が格納されたreportFormをサービスへ渡してDBに登録
         commentService.saveComment(comment);
+        //返信先の投稿の更新日時を更新する
+        //IDを引数にReportServiceのupdateReportを呼び出す
+        Integer ID = comment.getContent_id();
+        reportService.updateReport(ID);
         // rootへリダイレクト
         return new ModelAndView("redirect:/");
     }

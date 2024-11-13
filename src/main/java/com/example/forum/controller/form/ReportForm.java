@@ -3,6 +3,7 @@ package com.example.forum.controller.form;
 import jakarta.persistence.Column;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,6 +15,7 @@ public class ReportForm {
 
     private int id;
 
+    @NotBlank(message = "投稿内容を入力してください")
     private String content;
 
     private Date createdDate;

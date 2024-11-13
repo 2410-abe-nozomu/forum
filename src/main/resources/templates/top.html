@@ -38,6 +38,11 @@
         </div>
         <div class="comment-button">
             <form th:method="post" th:action="@{/comment/{id}(id=${content.id})}" th:object="${formModel}">
+                <div th:if="${contentError}" class="error-message">
+                    <div th:if="${reportId == content.id}">
+                        <span th:text="${contentError}"></span>
+                    </div>
+                </div>
                 <textarea class="tweet-box" th:field="*{content}" size="20" maxlength="200" /></textarea><br/>
                 <input type="submit" value="返信" />
             </form>
