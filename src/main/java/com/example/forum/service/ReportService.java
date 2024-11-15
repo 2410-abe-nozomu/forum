@@ -1,6 +1,7 @@
 package com.example.forum.service;
 
 import com.example.forum.controller.form.ReportForm;
+import com.example.forum.mapper.ReportMapper;
 import com.example.forum.repository.ReportRepository;
 import com.example.forum.repository.entity.Report;
 import io.micrometer.common.util.StringUtils;
@@ -12,12 +13,13 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class ReportService {
     @Autowired
     ReportRepository reportRepository;
+    @Autowired
+    private ReportMapper reportMapper;
 
     /*
      * レコード全件取得処理
@@ -48,8 +50,11 @@ public class ReportService {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        //repositoryを呼び出して、戻り値をEntityにつめて、Formに移す
+        /*//repositoryを呼び出して、戻り値をEntityにつめて、Formに移す
         List<Report> results = reportRepository.findByCreatedDateBetweenOrderByUpdatedDateDesc(StartDate, EndDate);
+        List<ReportForm> reports = setReportForm(results);
+        return reports;*/
+        List<Report> results = reportMapper.getReport(StartDate, EndDate);
         List<ReportForm> reports = setReportForm(results);
         return reports;
     }
